@@ -1,0 +1,1 @@
+export function ConnectionBadge({ connected }: { connected: boolean }) { return <div className={`connection-badge ${connected ? 'connected' : ''}`}><span className="connection-dot" />{connected ? 'Backend connected' : 'Backend offline'}</div>; }
