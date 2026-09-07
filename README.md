@@ -1,6 +1,6 @@
 # AgriRover — Autonomous Precision Agriculture Rover
 
-A 48-hour hackathon MVP: draw a field boundary on Google Maps, and an autonomous rover navigates it in a Boustrophedon (lawnmower) coverage pattern, sampling soil moisture and executing a user-prescribed treatment (seeding, irrigation, or fertilizer) along the way.
+A 48-hour hackathon MVP: draw a field boundary on OpenStreetMap, and an autonomous rover navigates it in a Boustrophedon (lawnmower) coverage pattern, sampling soil moisture and executing a user-prescribed treatment (seeding, irrigation, or fertilizer) along the way.
 
 **Design philosophy:** deterministic math for deterministic problems (path planning), physical sensors for direct measurements (soil moisture, heading, distance), and AI only where genuine spatial uncertainty exists (soil moisture interpolation between sample points). GPS is used for a global origin lock and geofencing only — not for live navigation, since consumer GPS's ~2.5m CEP is unusable for centimeter-scale row-following on a 10×10m plot.
 
@@ -11,7 +11,7 @@ A 48-hour hackathon MVP: draw a field boundary on Google Maps, and an autonomous
 ```
 agri-rover/
 ├── backend/       FastAPI server + Boustrophedon path planner (SW1)
-├── frontend/      React + TypeScript + Google Maps dashboard (SW2)
+├── frontend/      React + TypeScript + OpenStreetMap dashboard (SW2)
 ├── firmware/      ESP32 C++ firmware (HW2, integrated by SW1)
 ├── docs/          This documentation set
 └── README.md
@@ -24,7 +24,7 @@ agri-rover/
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- A Google Maps JavaScript API key with billing enabled (Maps + Places API)
+- OpenStreetMap tiles through Leaflet (no map API key required)
 - ESP32-WROOM-32E with the components listed in the BOM below, flashed via Arduino IDE or PlatformIO
 
 ### Backend
@@ -39,7 +39,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local   # then fill in your Google Maps API key
+cp .env.example .env.local   # then set the backend WebSocket URL if needed
 npm run dev
 ```
 Open `http://localhost:3000`.
