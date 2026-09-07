@@ -73,16 +73,14 @@ export default defineConfig({
 
 `frontend/.env.example`:
 ```text
-VITE_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
 VITE_BACKEND_WS_URL=ws://localhost:8000/ws/frontend
 ```
 
-Copy to `frontend/.env.local` (gitignored) and fill in a real key.
+Copy to `frontend/.env.local` (gitignored). The frontend map uses OpenStreetMap tiles through Leaflet and does not require a map API key.
 
 **⚠️ Security warning — read before committing anything:**
 - Never commit `.env.local` or any file containing a real API key. Confirm `.gitignore` covers `.env.local` (see `SETUP_BASE.md`).
-- In the Google Cloud Console, restrict the Maps JavaScript API key to **HTTP referrers** (`localhost:3000/*` and your demo laptop's LAN IP) before the hackathon starts, not after — an unrestricted key committed to a public repo will get scraped and billed within minutes.
-- If a key does leak into a commit, rotate it immediately in the Cloud Console; `git revert` does not remove it from GitHub's history.
+- OpenStreetMap's public tile service is suitable for development and small demos. For production or high traffic, use a tile provider with a usage policy appropriate for your deployment.
 
 ---
 
