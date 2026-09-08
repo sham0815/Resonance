@@ -84,6 +84,8 @@ class ConvexHullPlanner:
         total_distance = self._path_length(waypoints_local)
         return {
             "field_id": field_id,
+            "row_spacing_m": self.row_spacing,
+            "sampling_density_m": self.sampling_density,
             "hull_area_m2": float(hull.area),
             "grid_orientation_deg": math.degrees(grid_angle),
             "waypoints_local": [[float(x), float(y)] for x, y in waypoints_local],
