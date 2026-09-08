@@ -1,7 +1,7 @@
 export interface LatLng { lat: number; lng: number }
 
 export interface MissionPlan {
-  field_id: string;
+  field_id?: string;
   hull_area_m2: number;
   grid_orientation_deg: number;
   waypoints_local: [number, number][];
@@ -12,28 +12,49 @@ export interface MissionPlan {
 }
 
 export interface ResourcesUsed {
-  fertilizer_g: number;
-  water_ml: number;
-  seeds: number;
+  fertilizer_g: number | null;
+  water_ml: number | null;
+  seeds: number | null;
 }
 
-export type RoverStatus = 'IDLE' | 'NAVIGATING' | 'ARRIVED_AT_NODE' | 'PERFORMING_ACTION' | 'COMM_LOST' | 'LOW_BATTERY' | 'STUCK' | 'MISSION_COMPLETE' | string;
+export type TelemetrySource = 'SENSOR' | 'SIMULATION';
+export type RoverStatus = 'IDLE' | 'READY' | 'NAVIGATING' | 'ARRIVED_AT_NODE' | 'PERFORMING_ACTION' | 'SOWING' | 'WATERING' | 'FERTILIZING' | 'PAUSED' | 'STOPPED' | 'EMERGENCY STOP' | 'COMMUNICATION LOST' | 'LOW BATTERY' | 'STUCK' | 'MISSION COMPLETE' | string;
+export type Payload = 'MAPPING' | 'SEEDING' | 'FERTILIZER' | 'IRRIGATION';
 
 export interface TelemetryData {
   timestamp: number;
-  rover_status: RoverStatus;
-  current_x_m: number;
-  current_y_m: number;
-  heading_deg: number;
-  gps_lat: number;
-  gps_lng: number;
-  soil_moisture_pct: number;
-  battery_pct: number;
-  active_payload: string;
-  resources_used: ResourcesUsed;
+  source: TelemetrySource;
+  x_m: number | null;
+  y_m: number | null;
+  soil_moisture_pct: number | null;
+  humidity_pct: number | null;
+  depth_mm: number | null;
+  rover_status: RoverStatus | null;
+  gps_lat: number | null;
+  gps_lng: number | null;
+  heading_deg: number | null;
+  battery_pct: number | null;
+  active_payload: Payload | null;
+  resources_used: ResourcesUsed | null;
+}
+
+export interface SoilMoisturePrediction {
+  field_id: string;
+  x_m: number;
+  y_m: number;
+  depth_mm: number;
+  soil_type: string;
+  humidity_pct: number | null;
+  hours_since_irrigation: number | null;
+  timestamp: number;
+  model_name: string;
+  version: string;
+  predicted_moisture_pct: number;
+  source: 'ML_MODEL';
 }
 
 export type BackendMessage =
   | { type: 'MISSION_STARTED'; plan: MissionPlan }
   | { type: 'MISSION_ERROR'; error: string }
-  | { type: 'TELEMETRY'; payload: TelemetryData };
+  | { type: 'TELEMETRY'; payload: TelemetryData }
+  | { type: 'AI_SOIL_MOISTURE_PREDICTION'; payload: SoilMoisturePrediction };
