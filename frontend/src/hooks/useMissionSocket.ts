@@ -11,6 +11,9 @@ export function useMissionSocket() {
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<number | undefined>(undefined);
   const disposedRef = useRef(false);
+  // Retains the inputs that produced the current plan. This supports a
+  // rolling deployment where a browser reaches an older backend briefly.
+  const requestedSettingsRef = useRef({ rowSpacing: 1.0, samplingSpacing: 3.0 });
 
   useEffect(() => {
     disposedRef.current = false;
@@ -27,7 +30,15 @@ export function useMissionSocket() {
       socket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as BackendMessage;
-          if (message.type === 'MISSION_STARTED') { setMissionPlan(message.plan); setError(null); }
+          if (message.type === 'MISSION_STARTED') {
+            const requested = requestedSettingsRef.current;
+            setMissionPlan({
+              ...message.plan,
+              row_spacing_m: Number.isFinite(message.plan.row_spacing_m) ? message.plan.row_spacing_m : requested.rowSpacing,
+              sampling_density_m: Number.isFinite(message.plan.sampling_density_m) ? message.plan.sampling_density_m : requested.samplingSpacing,
+            });
+            setError(null);
+          }
           if (message.type === 'MISSION_ERROR') setError(message.error || 'The backend rejected this mission.');
           if (message.type === 'TELEMETRY') setTelemetry(message.payload);
         } catch { setError('Received an unreadable message from the backend.'); }
@@ -43,6 +54,7 @@ export function useMissionSocket() {
 
   const startMission = useCallback((boundaryPoints: LatLng[], payload: string, prescription: Record<string, number>, rowSpacing: number, samplingSpacing: number) => {
     if (socketRef.current?.readyState !== WebSocket.OPEN) { setError('Backend is offline. Mission was not sent.'); return false; }
+    requestedSettingsRef.current = { rowSpacing, samplingSpacing };
     socketRef.current.send(JSON.stringify({
       type: 'START_MISSION',
       payload: {

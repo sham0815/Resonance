@@ -33,6 +33,14 @@ export interface TelemetryData {
   battery_pct: number;
   active_payload: string;
   resources_used: ResourcesUsed;
+  // TEMPORARY ESP32 sensor/status bridge. Optional to preserve the existing contract.
+  soil_moisture_raw?: number;
+  obstacle_distance_cm?: number | null;
+  ambient_temperature_c?: number;
+  relative_humidity_pct?: number;
+  movement_status?: 'MOVING_FORWARD' | 'STOPPED' | string;
+  pump_status?: 'ON' | 'OFF' | string;
+  operational_phase?: 'NAVIGATION_MONITORING' | 'IRRIGATION_WATERING' | string;
 }
 
 export type BackendMessage =
