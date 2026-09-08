@@ -38,6 +38,15 @@ def test_rest_generates_mission_without_esp32():
     assert result["mission_plan"]["total_distance_m"] > 0
 
 
+def test_rest_uses_and_returns_requested_grid_settings():
+    request = {**VALID_REQUEST, "row_spacing_m": 0.5, "sampling_density_m": 2.0}
+    with TestClient(app) as client:
+        response = client.post("/api/generate-mission", json=request)
+    plan = response.json()["mission_plan"]
+    assert plan["row_spacing_m"] == 0.5
+    assert plan["sampling_density_m"] == 2.0
+
+
 def test_rest_returns_controlled_error_for_invalid_geometry():
     request = {**VALID_REQUEST, "boundary_points": VALID_REQUEST["boundary_points"][:2]}
     with TestClient(app) as client:
@@ -52,6 +61,8 @@ def test_frontend_websocket_start_invalid_and_stop_without_esp32():
         started = websocket.receive_json()
         assert started["type"] == "MISSION_STARTED"
         assert started["plan"]["field_id"] == "test"
+        assert started["plan"]["row_spacing_m"] == 1.0
+        assert started["plan"]["sampling_density_m"] == 3.0
         websocket.send_text(json.dumps({"type": "START_MISSION", "payload": {"field_id": "bad"}}))
         assert websocket.receive_json()["type"] == "MISSION_ERROR"
         websocket.send_text(json.dumps({"type": "STOP_MISSION"}))
@@ -62,6 +73,21 @@ def test_esp32_telemetry_is_relayed_to_frontend():
     telemetry = {"rover_status": "IDLE", "battery_pct": 84}
     with TestClient(app) as client, client.websocket_connect("/ws/frontend") as frontend, client.websocket_connect("/ws/esp32") as esp32:
         esp32.send_text(json.dumps(telemetry))
+        assert frontend.receive_json() == {"type": "TELEMETRY", "payload": telemetry}
+
+
+def test_temporary_esp32_sensor_envelope_reaches_dashboard():
+    telemetry = {
+        "soil_moisture_raw": 1820,
+        "obstacle_distance_cm": 42.5,
+        "ambient_temperature_c": 29.4,
+        "relative_humidity_pct": 67.0,
+        "movement_status": "MOVING_FORWARD",
+        "pump_status": "OFF",
+        "operational_phase": "NAVIGATION_MONITORING",
+    }
+    with TestClient(app) as client, client.websocket_connect("/ws/frontend") as frontend, client.websocket_connect("/ws/esp32") as esp32:
+        esp32.send_text(json.dumps({"type": "TELEMETRY", "payload": telemetry}))
         assert frontend.receive_json() == {"type": "TELEMETRY", "payload": telemetry}
 
 
