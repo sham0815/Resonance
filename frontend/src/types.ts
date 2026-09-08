@@ -2,6 +2,8 @@ export interface LatLng { lat: number; lng: number }
 
 export interface MissionPlan {
   field_id: string;
+  row_spacing_m: number;
+  sampling_density_m: number;
   hull_area_m2: number;
   grid_orientation_deg: number;
   waypoints_local: [number, number][];

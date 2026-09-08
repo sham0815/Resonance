@@ -41,15 +41,15 @@ export function useMissionSocket() {
     };
   }, []);
 
-  const startMission = useCallback((boundaryPoints: LatLng[], payload: string, prescription: Record<string, number>) => {
+  const startMission = useCallback((boundaryPoints: LatLng[], payload: string, prescription: Record<string, number>, rowSpacing: number, samplingSpacing: number) => {
     if (socketRef.current?.readyState !== WebSocket.OPEN) { setError('Backend is offline. Mission was not sent.'); return false; }
     socketRef.current.send(JSON.stringify({
       type: 'START_MISSION',
       payload: {
         field_id: 'field_alpha',
         boundary_points: boundaryPoints,
-        row_spacing_m: 1.0,
-        sampling_density_m: 3.0,
+        row_spacing_m: rowSpacing,
+        sampling_density_m: samplingSpacing,
         active_payload: payload,
         prescription,
       },
@@ -62,5 +62,11 @@ export function useMissionSocket() {
     if (socketRef.current?.readyState === WebSocket.OPEN) socketRef.current.send(JSON.stringify({ type: 'STOP_MISSION' }));
   }, []);
 
-  return { connected, missionPlan, telemetry, error, startMission, stopMission };
+  const resetMission = useCallback(() => {
+    setMissionPlan(null);
+    setTelemetry(null);
+    setError(null);
+  }, []);
+
+  return { connected, missionPlan, telemetry, error, startMission, stopMission, resetMission };
 }

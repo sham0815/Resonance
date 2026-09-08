@@ -10,6 +10,8 @@ export function MissionPanel({ plan }: { plan: MissionPlan | null }) {
       <Metric label="Coverage route" value={`${format(plan.total_distance_m)} m`} />
       <Metric label="Est. duration" value={`${format(plan.estimated_time_min)} min`} />
       <Metric label="Grid heading" value={`${format(plan.grid_orientation_deg)}°`} />
+      <Metric label="Row spacing" value={`${format(plan.row_spacing_m)} m`} />
+      <Metric label="Sampling spacing" value={`${format(plan.sampling_density_m)} m`} />
       <Metric label="Waypoints" value={String(plan.waypoints_gps?.length ?? 0)} />
       <Metric label="Sampling points" value={String(plan.sampling_points?.length ?? 0)} />
     </div> : <div className="empty-state"><strong>No mission plan yet</strong><span>Click at least three points on the map to define a field.</span></div>}
