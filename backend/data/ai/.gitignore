@@ -1,0 +1,3 @@
+# Runtime records are persisted locally and must not be committed with source assets.
+*.json
+*.jsonl
