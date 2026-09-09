@@ -28,6 +28,7 @@ async def lifespan(application: FastAPI):
     application.state.ai_status = "AI_AVAILABLE" if application.state.ml_model is not None else "AI_UNAVAILABLE"
     application.state.active_mission = None
     application.state.active_field_id = None
+    application.state.mission_paused = False
     yield
 
 
@@ -190,12 +191,29 @@ async def frontend_endpoint(websocket: WebSocket) -> None:
                 await _handle_start_mission(websocket, message.get("payload", {}))
             elif message.get("type") == "STOP_MISSION":
                 app.state.active_mission = None
+                app.state.mission_paused = False
                 if esp32_ws is not None:
                     try:
                         await esp32_ws.send_text(json.dumps({"type": "STOP_MISSION"}))
                     except Exception:
                         pass
                 await websocket.send_text(json.dumps({"type": "MISSION_STOPPED", "message": "Mission halted by user"}))
+            elif message.get("type") == "PAUSE_MISSION":
+                app.state.mission_paused = True
+                if esp32_ws is not None:
+                    try:
+                        await esp32_ws.send_text(json.dumps({"type": "PAUSE_MISSION"}))
+                    except Exception:
+                        pass
+                await websocket.send_text(json.dumps({"type": "MISSION_PAUSED"}))
+            elif message.get("type") == "RESUME_MISSION":
+                app.state.mission_paused = False
+                if esp32_ws is not None:
+                    try:
+                        await esp32_ws.send_text(json.dumps({"type": "RESUME_MISSION"}))
+                    except Exception:
+                        pass
+                await websocket.send_text(json.dumps({"type": "MISSION_RESUMED"}))
             else:
                 await websocket.send_text(json.dumps({"type": "MISSION_ERROR", "error": "Unknown message type"}))
     except WebSocketDisconnect:

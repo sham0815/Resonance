@@ -69,5 +69,8 @@ export interface SoilMoisturePrediction {
 export type BackendMessage =
   | { type: 'MISSION_STARTED'; plan: MissionPlan }
   | { type: 'MISSION_ERROR'; error: string }
+  | { type: 'MISSION_STOPPED'; message: string }
+  | { type: 'MISSION_PAUSED' }
+  | { type: 'MISSION_RESUMED' }
   | { type: 'TELEMETRY'; payload: TelemetryData }
   | { type: 'AI_SOIL_MOISTURE_PREDICTION'; payload: SoilMoisturePrediction };
