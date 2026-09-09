@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BackendMessage, LatLng, MissionPlan, TelemetryData } from '../types';
+import type { BackendMessage, LatLng, MissionPlan, SoilMoisturePrediction, TelemetryData, Payload } from '../types';
 
 const WS_URL = import.meta.env.VITE_BACKEND_WS_URL || 'ws://localhost:8000/ws/frontend';
 
@@ -7,6 +7,8 @@ export function useMissionSocket() {
   const [connected, setConnected] = useState(false);
   const [missionPlan, setMissionPlan] = useState<MissionPlan | null>(null);
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
+  const [telemetryHistory, setTelemetryHistory] = useState<TelemetryData[]>([]);
+  const [predictions, setPredictions] = useState<SoilMoisturePrediction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<number | undefined>(undefined);
@@ -22,10 +24,7 @@ export function useMissionSocket() {
       const socket = new WebSocket(WS_URL);
       socketRef.current = socket;
       socket.onopen = () => { setConnected(true); setError(null); };
-      socket.onclose = () => {
-        setConnected(false);
-        if (!disposedRef.current) reconnectRef.current = window.setTimeout(connect, 3000);
-      };
+      socket.onclose = () => { setConnected(false); if (!disposedRef.current) reconnectRef.current = window.setTimeout(connect, 3000); };
       socket.onerror = () => setError('Backend connection unavailable. Check the server and WebSocket URL.');
       socket.onmessage = (event) => {
         try {
@@ -40,19 +39,28 @@ export function useMissionSocket() {
             setError(null);
           }
           if (message.type === 'MISSION_ERROR') setError(message.error || 'The backend rejected this mission.');
-          if (message.type === 'TELEMETRY') setTelemetry(message.payload);
+          if (message.type === 'TELEMETRY') {
+            setTelemetry(message.payload);
+            setTelemetryHistory((history) => [...history, message.payload].slice(-300));
+          }
+          if (message.type === 'AI_SOIL_MOISTURE_PREDICTION') {
+            setPredictions((items) => [...items, message.payload].slice(-300));
+          }
         } catch { setError('Received an unreadable message from the backend.'); }
       };
     };
     connect();
-    return () => {
-      disposedRef.current = true;
-      if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
-      socketRef.current?.close();
-    };
+    return () => { disposedRef.current = true; if (reconnectRef.current) window.clearTimeout(reconnectRef.current); socketRef.current?.close(); };
   }, []);
 
-  const startMission = useCallback((boundaryPoints: LatLng[], payload: string, prescription: Record<string, number>, rowSpacing: number, samplingSpacing: number) => {
+  const startMission = useCallback((
+    boundaryPoints: LatLng[],
+    payload: Payload,
+    prescription: Record<string, number>,
+    soilType: string = 'loam',
+    rowSpacing: number = 1.0,
+    samplingSpacing: number = 3.0
+  ) => {
     if (socketRef.current?.readyState !== WebSocket.OPEN) { setError('Backend is offline. Mission was not sent.'); return false; }
     requestedSettingsRef.current = { rowSpacing, samplingSpacing };
     socketRef.current.send(JSON.stringify({
@@ -64,6 +72,7 @@ export function useMissionSocket() {
         sampling_density_m: samplingSpacing,
         active_payload: payload,
         prescription,
+        soil_type: soilType,
       },
     }));
     setError(null);
@@ -77,8 +86,10 @@ export function useMissionSocket() {
   const resetMission = useCallback(() => {
     setMissionPlan(null);
     setTelemetry(null);
+    setTelemetryHistory([]);
+    setPredictions([]);
     setError(null);
   }, []);
 
-  return { connected, missionPlan, telemetry, error, startMission, stopMission, resetMission };
+  return { connected, missionPlan, telemetry, telemetryHistory, predictions, error, startMission, stopMission, resetMission };
 }
